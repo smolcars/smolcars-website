@@ -158,37 +158,39 @@ function ensureRainStarts(attempt = 0) {
   }, 120)
 }
 
-if (import.meta.env.DEV) {
-  const mountDevApp = async () => {
-    const rootElement = document.getElementById("root")
+async function mountApp() {
+  const rootElement = document.getElementById("root")
 
-    if (!rootElement) {
-      return
-    }
+  if (!rootElement) {
+    return
+  }
 
-    const [{ StrictMode }, { createRoot }, { default: App }] =
-      await Promise.all([
-        import("react"),
-        import("react-dom/client"),
-        import("./App"),
-      ])
+  const [{ StrictMode }, { createRoot, hydrateRoot }, { default: App }] =
+    await Promise.all([
+      import("react"),
+      import("react-dom/client"),
+      import("./App"),
+    ])
 
+  if (import.meta.env.DEV) {
     createRoot(rootElement).render(
       <StrictMode>
         <App />
       </StrictMode>
     )
-
-    window.requestAnimationFrame(() => {
-      ensureRainStarts()
-    })
+  } else {
+    hydrateRoot(rootElement, <App />)
   }
 
-  void mountDevApp()
-} else if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", () => ensureRainStarts(), {
-    once: true,
+  window.requestAnimationFrame(() => {
+    ensureRainStarts()
   })
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => {
+    void mountApp()
+  }, { once: true })
 } else {
-  ensureRainStarts()
+  void mountApp()
 }
